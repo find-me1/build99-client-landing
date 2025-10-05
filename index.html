@@ -3,21 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Build99</title>
+    <title>Set Your Password - Build99</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-        .container { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 450px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f4f7f9; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; width: 90%; text-align: center; }
         h1 { color: #2c3e50; }
         p { color: #555; }
-        .store-button { display: inline-block; padding: 15px 20px; margin-top: 15px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; }
-        .google-play { background-color: #4285F4; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #aaa; }
+        .message { margin-top: 15px; font-weight: bold; }
+        .success { color: green; }
+        .error { color: red; }
+        .store-button { display: inline-block; padding: 15px 20px; margin-top: 15px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; background-color: #4285F4; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Account Activated!</h1>
-        <p>Your password has been set. Please download our mobile app to access your project portal.</p>
-        <a href="<YOUR_PLAY_STORE_LINK_HERE>" class="store-button google-play">Download on Google Play</a>
+    <div class="container" id="password-form-container">
+        <h1>Set Your Password</h1>
+        <p>Welcome! Please create a secure password to access your Build99 project portal.</p>
+        <form id="password-form">
+            <input type="password" id="password" placeholder="New Password" required minlength="8">
+            <input type="password" id="confirm-password" placeholder="Confirm New Password" required>
+            <button type="submit">Set Password and Continue</button>
+        </form>
+        <p id="message-area" class="message"></p>
     </div>
+
+    <div class="container" id="success-container" style="display: none;">
+        <h1>Account Activated!</h1>
+        <p>Your password has been set. Please download our mobile app to log in and access your projects.</p>
+        <a href="<YOUR_PLAY_STORE_LINK>" class="store-button">Download on Google Play</a>
+    </div>
+
+    <script>
+        // --- IMPORTANT: Paste your Supabase URL and Anon Key here ---
+        const SUPABASE_URL = 'https://fxluvvxpnmfzqyytobcu.supabase.co'; 
+        const SUPABASE_ANON_KEY = '<YOUR_SUPABASE_ANON_KEY>';
+        // -----------------------------------------------------------
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const formContainer = document.getElementById('password-form-container');
+        const successContainer = document.getElementById('success-container');
+        const form = document.getElementById('password-form');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const messageArea = document.getElementById('message-area');
+        const submitButton = form.querySelector('button');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            messageArea.textContent = '';
+            
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                messageArea.textContent = 'Passwords do not match.';
+                messageArea.className = 'message error';
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Saving...';
+
+            const { error } = await supabase.auth.updateUser({ password: passwordInput.value });
+
+            if (error) {
+                messageArea.textContent = `Error: ${error.message}`;
+                messageArea.className = 'message error';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Set Password and Continue';
+            } else {
+                formContainer.style.display = 'none';
+                successContainer.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
