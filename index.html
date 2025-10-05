@@ -5,78 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Build99</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f4f7f9;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
-        }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            max-width: 450px;
-            width: 100%;
-        }
-        .logo {
-            max-width: 150px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            font-size: 24px;
-        }
-        p {
-            color: #555;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        .buttons {
-            margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .store-button {
-            display: inline-block;
-            padding: 15px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-        .store-button:hover {
-            transform: translateY(-2px);
-        }
-        .google-play {
-            background-color: #4285F4;
-        }
-        .app-store {
-            background-color: #000000;
-        }
+        body { font-family: sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+        .container { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 450px; }
+        h1 { color: #2c3e50; }
+        p { color: #555; }
+        .store-button { display: inline-block; padding: 15px 20px; margin-top: 15px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600; }
+        .google-play { background-color: #4285F4; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Optional: Add your logo here -->
-        <!-- <img src="URL_TO_YOUR_LOGO.png" alt="Build99 Logo" class="logo"> -->
-        
         <h1>Account Activated!</h1>
-        <p>Your password has been set. The best experience is in our mobile app. Please download it now to access your project portal.</p>
-        
-        <div class="buttons">
-            <!-- IMPORTANT: Replace # with your actual app store links -->
-            <a href="#" class="store-button google-play">Download on Google Play</a>
-            <a href="#" class="store-button app-store">Download on the App Store</a>
-        </div>
+        <p>Your password has been set. Please download our mobile app to access your project portal.</p>
+        <a href="<YOUR_PLAY_STORE_LINK_HERE>" class="store-button google-play">Download on Google Play</a>
     </div>
 </body>
 </html>
