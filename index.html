@@ -28,6 +28,11 @@
         <p>Your account has been successfully set up. Please download our mobile app to log in and access your projects.</p>
         <a href="<YOUR_PLAY_STORE_LINK>" class="store-button">Download on Google Play</a>
     </div>
+    
+    <div class="container" id="team-redirect-container">
+        <h1>Success!</h1>
+        <p>Redirecting you to your team dashboard now...</p>
+    </div>
 
     <div class="container" id="error-container">
         <h1>Authentication Error</h1>
@@ -42,23 +47,37 @@
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        const loadingContainer = document.getElementById('loading-container');
-        const clientSuccessContainer = document.getElementById('client-success-container');
-        const errorContainer = document.getElementById('error-container');
-        const errorMessage = document.getElementById('error-message');
+        const containers = {
+            loading: document.getElementById('loading-container'),
+            clientSuccess: document.getElementById('client-success-container'),
+            teamRedirect: document.getElementById('team-redirect-container'),
+            error: document.getElementById('error-container'),
+        };
+        const errorMessageEl = document.getElementById('error-message');
+        
+        let failsafeTimer;
 
-        const showError = (message) => {
-            loadingContainer.style.display = 'none';
-            errorMessage.textContent = message;
-            errorContainer.style.display = 'block';
+        const showState = (state, message = '') => {
+            clearTimeout(failsafeTimer); // Always clear the timer once we have a result
+            Object.values(containers).forEach(c => c.style.display = 'none');
+            if (containers[state]) {
+                containers[state].style.display = 'block';
+            }
+            if (state === 'error' && message) {
+                errorMessageEl.textContent = message;
+            }
         };
 
-        const handleUser = async (user) => {
+        const handleSession = async (session) => {
+            if (!session) {
+                showState('error', 'Invalid session. Please try the link from your email again.');
+                return;
+            }
             try {
                 const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('user_type')
-                    .eq('id', user.id)
+                    .eq('id', session.user.id)
                     .single();
 
                 if (error || !profile) {
@@ -66,46 +85,47 @@
                 }
 
                 if (profile.user_type === 'team') {
+                    showState('teamRedirect');
                     window.location.replace('https://crm.build99.in/dashboard');
                 } else if (profile.user_type === 'client') {
-                    loadingContainer.style.display = 'none';
-                    clientSuccessContainer.style.display = 'block';
+                    showState('clientSuccess');
                 } else {
-                    throw new Error('Unknown user type.');
+                    throw new Error('Your user role is not configured for portal access.');
                 }
             } catch (err) {
                 showError(err.message);
             }
         };
         
-        // --- THE FIX IS APPLIED HERE ---
+        // --- THIS IS THE ROBUST AUTH FLOW ---
         async function main() {
-            // 1. Proactively check for the session as soon as the page loads.
-            // This catches the session created from the URL token.
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                handleUser(session.user);
-                return; // We're done, no need to wait for the timeout.
-            }
+            // Set a timer that will show an error if nothing happens after 7 seconds.
+            failsafeTimer = setTimeout(() => {
+                showState('error', 'Authentication timed out. Please check your connection or try the link again.');
+            }, 7000);
 
-            // 2. Set up the listener for any FUTURE auth changes.
+            // Listen for any future auth changes.
             const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                // We only care about the initial sign-in from the link.
                 if (event === 'SIGNED_IN' && session) {
-                    handleUser(session.user);
+                    clearTimeout(failsafeTimer); // We got the event, cancel the timer!
+                    subscription.unsubscribe(); // Stop listening to prevent future issues
+                    handleSession(session);
                 }
             });
 
-            // 3. The failsafe timer remains as a backup.
-            setTimeout(() => {
-                if (loadingContainer.style.display === 'block') {
-                    showError('Authentication token is missing or has expired. Please try the link from your email again.');
-                }
-            }, 5000);
+            // Proactively check if the session is already available.
+            // This wins the race condition.
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                clearTimeout(failsafeTimer); // We found the session, cancel the timer!
+                subscription.unsubscribe();
+                handleSession(session);
+            }
         }
 
-        // Run the main function
+        // Run the main authentication flow
         main();
-        // --- END OF FIX ---
     </script>
 </body>
 </html>
