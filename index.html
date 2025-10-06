@@ -20,7 +20,7 @@
     <div class="container" id="loading-container" style="display: block;">
         <div class="spinner"></div>
         <h1>Authenticating...</h1>
-        <p>Please wait while we securely log you in.</p>
+        <p>Please wait while we securely process your request.</p>
     </div>
 
     <div class="container" id="client-success-container">
@@ -31,13 +31,13 @@
 
     <div class="container" id="error-container">
         <h1>Authentication Error</h1>
-        <p id="error-message">An unknown error occurred. Please try the link from your email again. If the problem persists, contact our support team.</p>
+        <p id="error-message">An unknown error occurred. Please try the link from your email again.</p>
     </div>
 
     <script>
         // --- IMPORTANT: Paste your Supabase URL and Anon Key here ---
-          const SUPABASE_URL = 'https://fxluvvxpnmfzqyytobcu.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bHV2dnhwbm1menF5eXRvYmN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwMzYwOTQsImV4cCI6MjA2NzYxMjA5NH0.WOTNdun-1I47MKf-R5lnFZIXW0Yu_BaD6LnZ6LF0ng0';
+        const SUPABASE_URL = 'https://fxluvvxpnmfzqyytobcu.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bHV2dnhwbm1menF5eXRvYmN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwMzYwOTQsImV4cCI6MjA2NzYxMjA5NH0.WOTNdun-1I47MKf-R5lnFZIXW0Yu_BaD6LnZ6LF0ng0'; // Replace with your real anon key
         // -----------------------------------------------------------
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -53,7 +53,6 @@
             errorContainer.style.display = 'block';
         };
 
-        // This function handles the redirect logic
         const handleUser = async (user) => {
             try {
                 const { data: profile, error } = await supabase
@@ -67,10 +66,8 @@
                 }
 
                 if (profile.user_type === 'team') {
-                    // If user is a team member, redirect to the CRM dashboard
                     window.location.replace('https://crm.build99.in/dashboard');
                 } else if (profile.user_type === 'client') {
-                    // If user is a client, show the "Download App" success message
                     loadingContainer.style.display = 'none';
                     clientSuccessContainer.style.display = 'block';
                 } else {
@@ -81,21 +78,34 @@
             }
         };
         
-        // Listen for the authentication event from Supabase
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session) {
+        // --- THE FIX IS APPLIED HERE ---
+        async function main() {
+            // 1. Proactively check for the session as soon as the page loads.
+            // This catches the session created from the URL token.
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
                 handleUser(session.user);
+                return; // We're done, no need to wait for the timeout.
             }
-            // The password recovery flow also fires SIGNED_IN after update
-        });
 
-        // Failsafe: If no auth event happens after a few seconds, show an error.
-        setTimeout(() => {
-            if (loadingContainer.style.display === 'block') {
-                showError('Authentication token is missing or has expired. Please try the link from your email again.');
-            }
-        }, 5000);
+            // 2. Set up the listener for any FUTURE auth changes.
+            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    handleUser(session.user);
+                }
+            });
 
+            // 3. The failsafe timer remains as a backup.
+            setTimeout(() => {
+                if (loadingContainer.style.display === 'block') {
+                    showError('Authentication token is missing or has expired. Please try the link from your email again.');
+                }
+            }, 5000);
+        }
+
+        // Run the main function
+        main();
+        // --- END OF FIX ---
     </script>
 </body>
 </html>
